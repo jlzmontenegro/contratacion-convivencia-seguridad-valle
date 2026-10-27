@@ -281,6 +281,7 @@
         </div>
       </div>
       <div class="fld"><label for="f-prov">Contratista</label><input type="text" id="f-prov" list="dl-prov" placeholder="Escribe y elige…" autocomplete="off"><datalist id="dl-prov"></datalist></div>
+      <div class="fld"><label for="f-clase">Clase de contrato</label><select id="f-clase"></select></div>
       <div class="fld"><label for="f-cat">Categoría del gasto</label><select id="f-cat"></select></div>
       <div class="fld"><label for="f-prog">Proyecto de inversión</label><select id="f-prog"></select></div>
       <div class="fld"><label for="f-est">Estado actual</label><select id="f-est"></select></div>
@@ -502,6 +503,9 @@ const RUBROS = [
   {k:'Otros gastos', color:'#898781', cats:()=>true},
 ];
 const rubroDe = cat => RUBROS.find(r=>r.cats(cat)).k;
+/* Clase: separa las prestaciones de servicios con persona natural (OPS) del resto */
+const CLASE_OPS = 'Prestación de servicios con persona natural (OPS)';
+const CLASE_OTROS = 'Empresas, convenios y compras (no OPS)';
 const colorRubro = k => (RUBROS.find(r=>r.k===k)||RUBROS[RUBROS.length-1]).color;
 
 /* Proyecto de inversión que cita el objeto (editable) */
@@ -590,6 +594,7 @@ function construir(crudos){
     c.provKey = norm(c.prov).trim() || '(sin nombre)';
     c.cat = categorizar(c);
     c.rubro = rubroDe(c.cat);
+    c.clase = c.cat.startsWith('OPS') ? CLASE_OPS : CLASE_OTROS;
     c.prog = proyecto(c);
     c.conFin = FUENTES.some((_,i)=>c['f'+i]>0);
     if(!c.firma){ if(c.fin >= DESDE) sinFirma.push(c); return; }
@@ -630,6 +635,7 @@ function setData(crudos){
    ============================================================ */
 const DIMS = {
   provKey:  {t:'Contratista', label:c=>c.provN},
+  clase:    {t:'Clase'},
   rubro:    {t:'Rubro'},
   cat:      {t:'Categoría'},
   prog:     {t:'Proyecto'},
@@ -736,10 +742,19 @@ function renderLead(){
   const top = [...RAW].sort((a,b)=>b.valor-a.valor)[0];
   const directa = RAW.filter(c=>/directa/i.test(c.modalidad));
   let t = `Desde enero de 2024 la Secretaría firmó <b>${plural(RAW.length,'contrato','contratos')}</b> por <b>${compactCOP(tot)}</b>. `;
-  if(RAW.length) t += `El ${Math.round(ops.length/RAW.length*100)}% son prestaciones de servicios con personas naturales, que suman el ${fmtPct(vOps/tot*100)} del valor; `+
-    `el ${Math.round(directa.length/RAW.length*100)}% se adjudicó por contratación directa. `;
+  const otros = RAW.length-ops.length;
+  if(RAW.length) t += `El ${Math.round(ops.length/RAW.length*100)}% son prestaciones de servicios con personas naturales, que suman el ${fmtPct(vOps/tot*100)} del valor `+
+    `(<a href="#" class="ver-clase" data-clase="${esc(CLASE_OPS)}">ver solo esos</a>); `+
+    `el ${fmtPct(otros/RAW.length*100)} restante —${plural(otros,'contrato','contratos')} con empresas, convenios y compras— se lleva el ${fmtPct((tot-vOps)/tot*100)} `+
+    `(<a href="#" class="ver-clase" data-clase="${esc(CLASE_OTROS)}">ver solo esos</a>). `+
+    `El ${Math.round(directa.length/RAW.length*100)}% se adjudicó por contratación directa. `;
   if(top) t += `El contrato más grande es de <b>${esc(top.provN)}</b> por <b>${compactCOP(top.valor)}</b> (${fmtPct(top.valor/tot*100)} del total): ${esc(top.objeto.toLowerCase().slice(0,110))}…`;
   $('lead').innerHTML = t;
+  // los enlaces dejan solo esa clase y llevan a los gráficos
+  $('lead').querySelectorAll('.ver-clase').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault(); state.sel.clase = new Set([a.dataset.clase]); page=1; render();
+    $('chips').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
 }
 function render(){
   const F = aplica();
@@ -961,7 +976,7 @@ function renderChips(){
 }
 
 /* --- controles --- */
-const SELECTS = {'f-cat':'cat','f-prog':'prog','f-est':'estado','f-tipo':'tipo','f-mod':'modalidad'};
+const SELECTS = {'f-clase':'clase','f-cat':'cat','f-prog':'prog','f-est':'estado','f-tipo':'tipo','f-mod':'modalidad'};
 function fillSelects(){
   for(const id in SELECTS){
     const d=SELECTS[id], cuenta={};
