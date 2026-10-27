@@ -86,10 +86,43 @@
   .bar-row.sel{background:var(--accent-soft)}
   .bar-row.sel .bar-lab{color:var(--strong);font-weight:700}
   .bar-lab{width:260px;min-width:260px;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  /* Top 15: el nombre del contratista se lee completo (salta de línea, sin recortar) */
+  #chart-prov .bar-row{align-items:center;margin-bottom:7px}
+  #chart-prov .bar-lab{white-space:normal;overflow:visible;text-overflow:clip;width:360px;min-width:360px;line-height:1.25;overflow-wrap:anywhere}
   .bar-track{flex:1;height:20px;position:relative;min-width:30px}
   .bar-fill{height:100%;border-radius:0 4px 4px 0;min-width:2px;transition:width .25s}
   .bar-val{font-size:12px;color:var(--strong);min-width:170px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .bar-val .sec{color:var(--muted);font-size:11px;margin-left:4px}
+  /* ¿En qué se gastó? — barra 100% por rubro + desglose */
+  .gasto-lead{margin:-2px 0 14px;font-size:14px;color:var(--strong);max-width:1050px}
+  .gasto-lead b{font-variant-numeric:tabular-nums}
+  .stack{display:flex;gap:2px;height:38px;border-radius:6px;overflow:hidden}
+  .stack .seg-r{height:100%;min-width:3px;cursor:pointer;transition:opacity .2s,width .25s}
+  .stack .seg-r:first-child{border-radius:6px 0 0 6px}
+  .stack .seg-r:last-child{border-radius:0 6px 6px 0}
+  .stack.has-sel .seg-r:not(.on){opacity:.28}
+  .stack .seg-r:hover{opacity:1;filter:brightness(1.08)}
+  .stack-lbls{display:flex;gap:2px;margin-top:5px;margin-bottom:16px}
+  .stack-lbls div{min-width:3px;overflow:hidden;white-space:nowrap;font-size:12px;color:var(--strong);font-variant-numeric:tabular-nums;line-height:1.25}
+  .stack-lbls div small{display:block;color:var(--muted);font-size:10.5px;overflow:hidden;text-overflow:ellipsis}
+  .gasto-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 22px}
+  .rubro{border-top:1px solid var(--line);padding-top:10px;min-width:0}
+  .rubro-h{display:flex;align-items:baseline;gap:8px;cursor:pointer;border-radius:6px;padding:2px 4px;margin:0 -4px 6px}
+  .rubro-h:hover{background:var(--panel2)}
+  .rubro-h.on{background:var(--accent-soft)}
+  .rubro-h i{width:12px;height:12px;border-radius:3px;flex:none;align-self:center}
+  .rubro-h .nm{font-weight:700;color:var(--strong);font-size:13px;flex:1;min-width:0}
+  .rubro-h .pc{font-size:19px;font-weight:700;color:var(--strong);font-variant-numeric:tabular-nums}
+  .rubro-h .vv{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .gsub{display:grid;grid-template-columns:minmax(0,190px) 1fr 168px;gap:8px;align-items:center;font-size:12px;padding:2px 4px;margin:0 -4px;border-radius:5px;cursor:pointer}
+  .gsub:hover{background:var(--panel2)}
+  .gsub.on{background:var(--accent-soft);font-weight:600}
+  .gsub .sl{color:var(--txt);line-height:1.25;overflow-wrap:anywhere}
+  .gsub .st{height:10px;background:var(--panel2);border-radius:0 4px 4px 0;position:relative}
+  .gsub .st span{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;min-width:2px}
+  .gsub .sv{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--strong);text-align:right;overflow:hidden;text-overflow:ellipsis}
+  .gsub .sv small{color:var(--muted);margin-left:4px}
+  .rubro .nota-r{font-size:11px;color:var(--muted);margin:4px 0 0}
   /* tooltip */
   #tip{position:fixed;pointer-events:none;background:#0b1413;color:#fff;font-size:12px;padding:8px 10px;border-radius:7px;max-width:330px;z-index:60;display:none;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.2)}
   #tip b{color:#c7ece8}
@@ -142,6 +175,7 @@
     .filterbar .fld{grid-column:span 4}
     .filterbar .col-q,.filterbar .col-yr{grid-column:span 6}
     .bar-lab{width:180px;min-width:180px}
+    #chart-prov .bar-lab{width:260px;min-width:260px}
   }
   /* ===== Móvil: prioriza datos; las gráficas se encogen, nada se sale ===== */
   @media(max-width:768px){
@@ -156,10 +190,15 @@
     .kpi .val{font-size:16px}
     .kpi .val.small{font-size:14px}
     .chartgrid{grid-template-columns:1fr;gap:0}
+    .gasto-grid{grid-template-columns:1fr}
+    .gasto-lead{font-size:13px}
+    .stack{height:30px}
+    .gsub{grid-template-columns:minmax(0,1fr) 56px 146px}
     .filterbar .fld,.filterbar .col-q,.filterbar .col-yr{grid-column:span 6}
     .card{padding:12px}
     .bar-row{flex-wrap:wrap;gap:2px 8px}
     .bar-lab{width:100%;min-width:0;text-align:left;font-size:11.5px}
+    #chart-prov .bar-lab{width:100%;min-width:0}
     .bar-track{height:14px}
     .bar-val{min-width:0;font-size:11px}
     .metricbar .resumen{margin-left:0;width:100%}
@@ -261,8 +300,11 @@
   </div>
 
   <div class="card">
-    <h3>¿En qué se ha gastado la plata? <span class="hint">— por categoría · clic para filtrar</span></h3>
-    <div id="chart-cat"></div>
+    <h3>¿En qué se ha gastado la plata? <span class="hint">— de cada 100 pesos contratados · clic en un rubro o en una categoría para filtrar</span></h3>
+    <p class="gasto-lead" id="gasto-lead"></p>
+    <div class="stack" id="gasto-stack" role="group" aria-label="Reparto del gasto por rubro"></div>
+    <div class="stack-lbls" id="gasto-lbls" aria-hidden="true"></div>
+    <div class="gasto-grid" id="gasto-list"></div>
   </div>
 
   <div class="card">
@@ -430,6 +472,22 @@ function categorizar(c){
   return 'Otros / sin clasificar';
 }
 
+/* Rubros: agrupan las categorías para leer el reparto de un vistazo.
+   El orden es fijo (y el color sigue al rubro, nunca a su tamaño): así
+   la paleta validada conserva sus pares vecinos en la barra 100%.
+   «Otros gastos» va en gris a propósito. */
+const RUBROS = [
+  {k:'Personal y apoyo a la gestión', color:'#2a78d6', cats:c=>c.startsWith('OPS') || c==='Personal operativo tercerizado'},
+  {k:'Expedición de pasaportes', color:'#eb6834', cats:c=>c==='Expedición de pasaportes'},
+  {k:'Logística, transporte y eventos', color:'#1baf7a', cats:c=>c==='Logística, transporte y eventos'},
+  {k:'Convenios y apoyos a organizaciones', color:'#eda100', cats:c=>c==='Convenios y apoyos a organizaciones'},
+  {k:'Tecnología, videovigilancia y comunicaciones', color:'#e87ba4', cats:c=>c==='Tecnología, videovigilancia y comunicaciones'},
+  {k:'Vehículos, combustible y seguros', color:'#008300', cats:c=>/^(Vehículos|Combustible|Pólizas)/.test(c)},
+  {k:'Otros gastos', color:'#898781', cats:()=>true},
+];
+const rubroDe = cat => RUBROS.find(r=>r.cats(cat)).k;
+const colorRubro = k => (RUBROS.find(r=>r.k===k)||RUBROS[RUBROS.length-1]).color;
+
 /* Proyecto de inversión que cita el objeto (editable) */
 const PROYECTOS = [
   ['Expedición de pasaportes', ['pasaporte']],
@@ -515,6 +573,7 @@ function construir(crudos){
     c.estado = NOMBRE_ESTADO[e] || c.estado;
     c.provKey = norm(c.prov).trim() || '(sin nombre)';
     c.cat = categorizar(c);
+    c.rubro = rubroDe(c.cat);
     c.prog = proyecto(c);
     c.conFin = FUENTES.some((_,i)=>c['f'+i]>0);
     if(!c.firma){ if(c.fin >= DESDE) sinFirma.push(c); return; }
@@ -555,6 +614,7 @@ function setData(crudos){
    ============================================================ */
 const DIMS = {
   provKey:  {t:'Contratista', label:c=>c.provN},
+  rubro:    {t:'Rubro'},
   cat:      {t:'Categoría'},
   prog:     {t:'Proyecto'},
   estado:   {t:'Estado'},
@@ -566,10 +626,10 @@ Object.keys(DIMS).forEach(d=>state.sel[d]=new Set());
 const valDim = (c,d) => DIMS[d].val ? DIMS[d].val(c) : c[d];
 let metric='v', fmtMode='abs';
 
-function aplica(){
+function aplica(ignorar=[]){
   const q = norm(state.q).trim();
   return RAW.filter(c=>{
-    for(const d in DIMS){ if(state.sel[d].size && !state.sel[d].has(valDim(c,d))) return false; }
+    for(const d in DIMS){ if(!ignorar.includes(d) && state.sel[d].size && !state.sel[d].has(valDim(c,d))) return false; }
     if(state.vmin!=null && c.valor<state.vmin) return false;
     if(state.vmax!=null && c.valor>state.vmax) return false;
     if(c.ano<state.ymin || c.ano>state.ymax) return false;
@@ -644,7 +704,9 @@ function render(){
   renderKPIs(F, tot); renderChips(); syncControls();
   $('m-resumen').textContent = `Seleccionado: ${plural(F.length,'contrato','contratos')} · ${compactCOP(tot.v)}`;
   const dimChart = (el, d) => barChart($(el), group(F, c=>valDim(c,d), DIMS[d].label), {tot, sel:state.sel[d], onClick:k=>toggle(d,k)});
-  dimChart('chart-cat','cat');
+  // el reparto ignora sus propios filtros (rubro y categoría): lo elegido se resalta sin perder el contexto
+  const FG = aplica(['rubro','cat']);
+  renderGasto(FG, {n:FG.length, v:FG.reduce((s,c)=>s+c.valor,0)});
   dimChart('chart-prog','prog');
   // Top 15: siempre los 15 de mayor valor adjudicado; la métrica elegida solo cambia la lectura
   const provs = group(F, c=>c.provKey, c=>c.provN).sort((a,b)=>b.v-a.v).slice(0,15);
@@ -658,6 +720,77 @@ function render(){
   barChart($('chart-ano'), anos, {tot, ordenar:false, sel:new Set(state.ymin===state.ymax?[String(state.ymin)]:[]),
     onClick:k=>{ const y=+k, solo=state.ymin===y&&state.ymax===y; state.ymin=solo?ANO_MIN:y; state.ymax=solo?ANO_MAX:y; page=1; render(); }});
   renderFuente(F); renderMeth(); renderTable(F);
+}
+/* ¿En qué se gastó? Barra 100% por rubro (orden fijo) + desglose por
+   categoría. Las barras de categoría se miden contra el total, así que
+   son comparables entre rubros. Respeta «Medir por» y «Mostrar». */
+function renderGasto(F, tot){
+  const m = metric, T = tot[m] || 1;
+  const rub = RUBROS.map(r=>{
+    const L = F.filter(c=>c.rubro===r.k);
+    return {k:r.k, lab:r.k, color:r.color, n:L.length, v:L.reduce((s,c)=>s+c.valor,0),
+            subs:group(L,c=>c.cat).sort((a,b)=>b[m]-a[m]||b.v-a.v)};
+  }).filter(r=>r.n);
+  // rubro de una sola categoría: el desglose son sus 3 contratistas mayores
+  rub.forEach(r=>{
+    if(r.subs.length===1 && r.subs[0].k===r.k){
+      r.subs = group(F.filter(c=>c.rubro===r.k), c=>c.provKey, c=>c.provN).sort((a,b)=>b.v-a.v).slice(0,3);
+      r.porProv = true;
+    }
+  });
+  const selR = state.sel.rubro, selC = state.sel.cat;
+  const pct = r => r[m]/T*100;
+  const leer = r => m==='v' ? compactCOP(r.v) : plural(r.n,'contrato','contratos');
+  // frase: los dos rubros más grandes y el contrato que más pesa
+  const orden = [...rub].sort((a,b)=>b[m]-a[m]);
+  let frase = '';
+  if(orden.length){
+    const unidad = m==='v' ? 'de cada 100 pesos' : 'de cada 100 contratos';
+    const verbo = m==='v' ? 'se fueron en' : 'son de';
+    frase = `${unidad.charAt(0).toUpperCase()+unidad.slice(1)}, <b>${Math.round(pct(orden[0]))}</b> ${verbo} <b>${esc(orden[0].k.toLowerCase())}</b>`;
+    if(orden[1]) frase += ` y <b>${Math.round(pct(orden[1]))}</b> en <b>${esc(orden[1].k.toLowerCase())}</b>`;
+    frase += '. ';
+    const top = [...F].sort((a,b)=>b.valor-a.valor)[0];
+    if(m==='v' && top && tot.v && top.valor/tot.v>=.1) frase += `Un solo contrato, el de ${esc(top.provN)} (${esc(top.cat.toLowerCase())}), equivale al ${fmtPct(top.valor/tot.v*100)} de todo lo contratado.`;
+    if(m==='n'){ const ops=F.filter(c=>c.cat.startsWith('OPS')); if(F.length) frase += `Las prestaciones de servicios con persona natural son el ${fmtPct(ops.length/F.length*100)} de los contratos, pero solo el ${fmtPct(tot.v?ops.reduce((s,c)=>s+c.valor,0)/tot.v*100:0)} del valor.`; }
+  }
+  $('gasto-lead').innerHTML = frase || 'Ningún contrato cumple los filtros actuales.';
+  // barra 100%
+  const st = $('gasto-stack');
+  const enFoco = r => selR.has(r.k) || r.subs.some(s=>selC.has(s.k));
+  st.classList.toggle('has-sel', rub.some(enFoco));
+  st.innerHTML = rub.map(r=>`<div class="seg-r${enFoco(r)?' on':''}" style="width:${pct(r)}%;background:${r.color}" data-k="${encodeURIComponent(r.k)}" data-tip="${esc(tipHTML(r,tot))}" role="button" tabindex="0" aria-pressed="${selR.has(r.k)}" aria-label="${esc(r.k)}: ${fmtPct(pct(r))}"></div>`).join('');
+  $('gasto-lbls').innerHTML = rub.map(r=>{
+    const p = pct(r);
+    return `<div style="width:${p}%">${p>=6?`<b>${fmtPct(p)}</b>`:''}${p>=13?`<small>${esc(r.k)}</small>`:''}</div>`;
+  }).join('');
+  st.querySelectorAll('.seg-r').forEach(s=>{
+    const go=()=>toggle('rubro',decodeURIComponent(s.dataset.k));
+    s.addEventListener('click',go); s.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+  // desglose (ordenado por tamaño; el color sigue al rubro)
+  const maxSub = Math.max(...rub.flatMap(r=>r.subs.map(s=>s[m])),1);
+  $('gasto-list').innerHTML = orden.map(r=>{
+    const dim = r.porProv ? 'provKey' : 'cat', sel = state.sel[dim];
+    const subs = r.subs.map(s=>`
+      <div class="gsub${sel.has(s.k)?' on':''}" data-d="${dim}" data-v="${encodeURIComponent(s.k)}" data-tip="${esc(tipHTML(s,tot))}" role="button" tabindex="0">
+        <span class="sl">${esc(s.lab.replace(/^OPS · /,'OPS: '))}</span>
+        <span class="st"><span style="width:${(s[m]/maxSub*100).toFixed(1)}%;background:${r.color}"></span></span>
+        <span class="sv">${fmtMode==='pct'?fmtPct(s[m]/T*100):leer(s)}<small>${m==='v'?plural(s.n,'contrato','contratos'):compactCOP(s.v)}</small></span>
+      </div>`).join('');
+    const nota = r.porProv ? `<p class="nota-r">${r.n===1?'Es un solo contrato.':`Sus ${r.subs.length} contratistas mayores de ${fmtN(new Set(F.filter(c=>c.rubro===r.k).map(c=>c.provKey)).size)}.`}</p>` : '';
+    return `<div class="rubro">
+      <div class="rubro-h${selR.has(r.k)?' on':''}" data-rub="${encodeURIComponent(r.k)}" data-tip="${esc(tipHTML(r,tot))}" role="button" tabindex="0">
+        <i style="background:${r.color}"></i><span class="nm">${esc(r.k)}</span>
+        <span class="pc">${fmtPct(pct(r))}</span>
+        <span class="vv">${m==='v'?compactCOP(r.v)+' · '+plural(r.n,'contrato','contratos'):plural(r.n,'contrato','contratos')+' · '+compactCOP(r.v)}</span>
+      </div>${subs}${nota}</div>`;
+  }).join('');
+  $('gasto-list').querySelectorAll('[data-rub]').forEach(h=>h.addEventListener('click',()=>toggle('rubro',decodeURIComponent(h.dataset.rub))));
+  $('gasto-list').querySelectorAll('[data-d]').forEach(h=>{
+    const go=()=>toggle(h.dataset.d,decodeURIComponent(h.dataset.v));
+    h.addEventListener('click',go); h.addEventListener('keydown',e=>{ if(e.key==='Enter'){ go(); } });
+  });
 }
 function renderKPIs(F, tot){
   $('k-n').textContent = fmtN(F.length);
@@ -713,6 +846,7 @@ const COLS = [
   {k:'fin',     t:'Fin', def:1, cls:'dt'},
   {k:'estado',  t:'Estado', def:1, html:c=>`<span class="estado" style="${estadoColor(c.estado)}">${esc(c.estado)||'—'}</span>`},
   {k:'ref',     t:'Referencia', cls:'ref'},
+  {k:'rubro',   t:'Rubro', cls:'tip'},
   {k:'prog',    t:'Proyecto de inversión', cls:'tip'},
   {k:'tipo',    t:'Tipo de contrato', cls:'tip'},
   {k:'modalidad',t:'Modalidad', cls:'tip'},
