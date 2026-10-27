@@ -93,6 +93,18 @@
   .bar-fill{height:100%;border-radius:0 4px 4px 0;min-width:2px;transition:width .25s}
   .bar-val{font-size:12px;color:var(--strong);min-width:170px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .bar-val .sec{color:var(--muted);font-size:11px;margin-left:4px}
+  /* columnas verticales (año, modalidad) */
+  .colscroll{overflow-x:auto;max-width:100%;padding-bottom:2px}
+  .cols-v{display:flex;align-items:stretch;gap:10px;height:240px;border-bottom:1px solid #c3c2b7;padding:0 2px}
+  .col-v{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;cursor:pointer;border-radius:6px 6px 0 0;padding:0 2px}
+  .col-v:hover{background:var(--panel2)}
+  .col-v.sel{background:var(--accent-soft)}
+  .col-v .cv-val{font-size:12px;font-weight:700;color:var(--strong);text-align:center;font-variant-numeric:tabular-nums;line-height:1.2;margin-bottom:4px;white-space:nowrap}
+  .col-v .cv-val small{display:block;font-weight:400;color:var(--muted);font-size:10.5px}
+  .col-v .cv-bar{width:min(100%,64px);border-radius:4px 4px 0 0;min-height:2px;transition:height .25s}
+  .cols-v-lbls{display:flex;gap:10px;padding:0 2px;margin-top:6px}
+  .cols-v-lbls div{flex:1 1 0;min-width:0;text-align:center;font-size:11.5px;color:var(--txt);line-height:1.25;overflow-wrap:break-word;hyphens:auto}
+  .cols-v-lbls div.sel{font-weight:700;color:var(--strong)}
   /* ¿En qué se gastó? — barra 100% por rubro + desglose */
   .gasto-lead{margin:-2px 0 14px;font-size:14px;color:var(--strong);max-width:1050px}
   .gasto-lead b{font-variant-numeric:tabular-nums}
@@ -191,6 +203,10 @@
     .kpi .val.small{font-size:14px}
     .chartgrid{grid-template-columns:1fr;gap:0}
     .gasto-grid{grid-template-columns:1fr}
+    .cols-v{height:200px;gap:4px}
+    .cols-v-lbls{gap:4px}
+    .cols-v-lbls div{font-size:10.5px}
+    .col-v .cv-val{font-size:10.5px;white-space:normal}
     .gasto-lead{font-size:13px}
     .stack{height:30px}
     .gsub{grid-template-columns:minmax(0,1fr) 56px 146px}
@@ -683,6 +699,33 @@ function barChart(el, rows, {onClick, tot, sel, color, m=metric, f=fmtMode, orde
   });
 }
 
+/* Columnas verticales: mismas lecturas, tooltip y clic que barChart.
+   La etiqueta va debajo y salta de línea para leerse completa. */
+function colChart(el, rows, {onClick, tot, sel, color, m=metric, f=fmtMode, ordenar=true}={}){
+  tot = tot || {n:rows.reduce((s,r)=>s+r.n,0), v:rows.reduce((s,r)=>s+r.v,0)};
+  if(ordenar) rows = [...rows].sort((a,b)=>b[m]-a[m] || b.v-a.v);
+  const max = Math.max(...rows.map(r=>r[m]),1), haySel = sel && sel.size;
+  if(!rows.length){ el.innerHTML='<div class="vacio">Ningún contrato cumple los filtros actuales.</div>'; return; }
+  const cols = rows.map(r=>{
+    const pct = tot[m] ? r[m]/tot[m]*100 : 0, on = haySel && sel.has(r.k);
+    const principal = f==='pct' ? fmtPct(pct) : (m==='v' ? compactCOP(r.v) : fmtN(r.n));
+    const secundario = f==='pct' ? (m==='v' ? compactCOP(r.v) : plural(r.n,'contrato','contratos')) : (m==='v' ? plural(r.n,'contrato','contratos') : compactCOP(r.v));
+    const col = haySel && !on ? css('--barra-tenue') : (color||css('--barra'));
+    return `<div class="col-v${on?' sel':''}" data-k="${encodeURIComponent(r.k)}" data-tip="${esc(tipHTML(r,tot))}" role="button" tabindex="0" aria-pressed="${on?'true':'false'}" aria-label="${esc(r.lab)}: ${esc(principal)}">
+      <div class="cv-val">${principal}<small>${secundario}</small></div>
+      <div class="cv-bar" style="height:calc((100% - 48px) * ${(r[m]/max).toFixed(4)});background:${col}"></div></div>`;
+  }).join('');
+  const lbls = rows.map(r=>`<div class="${haySel&&sel.has(r.k)?'sel':''}">${esc(r.lab)}</div>`).join('');
+  // ancho mínimo por columna: en pantallas angostas la gráfica se desplaza dentro de su tarjeta
+  const mw = `min-width:${rows.length*74}px`;
+  el.innerHTML = `<div class="colscroll"><div class="cols-v" style="${mw}">${cols}</div><div class="cols-v-lbls" style="${mw}">${lbls}</div></div>`;
+  if(onClick) el.querySelectorAll('.col-v').forEach(c=>{
+    const go=()=>onClick(decodeURIComponent(c.dataset.k));
+    c.addEventListener('click',go);
+    c.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+}
+
 /* ============================================================
    5. RESUMEN Y VISTAS
    ============================================================ */
@@ -714,10 +757,10 @@ function render(){
   dimChart('chart-est','estado');
   const hoy=new Date().toISOString().slice(0,10), abiertos=F.filter(c=>!/Cerrado|Terminado/.test(c.estado)), vencidos=abiertos.filter(c=>c.fin&&c.fin<hoy);
   $('est-nota').textContent = vencidos.length ? `Ojo: ${plural(vencidos.length,'contrato','contratos')} de ${fmtN(abiertos.length)} sin cerrar en SECOP ya pasaron su fecha de fin. El estado es el que reporta la entidad y puede estar desactualizado.` : '';
-  dimChart('chart-tipo','tipo');
-  dimChart('chart-mod','modalidad');
+  colChart($('chart-tipo'), group(F,c=>c.tipo), {tot, sel:state.sel.tipo, onClick:k=>toggle('tipo',k)});
+  colChart($('chart-mod'), group(F,c=>c.modalidad), {tot, sel:state.sel.modalidad, onClick:k=>toggle('modalidad',k)});
   const anos = group(F,c=>c.ano).sort((a,b)=>a.k-b.k);
-  barChart($('chart-ano'), anos, {tot, ordenar:false, sel:new Set(state.ymin===state.ymax?[String(state.ymin)]:[]),
+  colChart($('chart-ano'), anos, {tot, ordenar:false, sel:new Set(state.ymin===state.ymax?[String(state.ymin)]:[]),
     onClick:k=>{ const y=+k, solo=state.ymin===y&&state.ymax===y; state.ymin=solo?ANO_MIN:y; state.ymax=solo?ANO_MAX:y; page=1; render(); }});
   renderFuente(F); renderMeth(); renderTable(F);
 }
